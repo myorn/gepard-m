@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "github.com/myorn/gepard-m/dto/proto";
+
+package proto;
+
+service Deposit {
+  rpc PeformDepositAction (Request) returns (Response) {}
+}
+
+message Request {
+  string source = 1;
+  string state = 2;
+  string amount = 3;
+  string tx_id = 4;
+}
+
+message Response {
+  string message = 1;
+}
