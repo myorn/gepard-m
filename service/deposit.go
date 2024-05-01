@@ -62,10 +62,10 @@ func validateDepositRequest(req *proto.Request) error {
 		return err
 	case amount < 0:
 		return errors.New("amount can't be negative")
-	case req.Source != sourceService || req.Source != sourcePayment ||
+	case req.Source != sourceService && req.Source != sourcePayment &&
 		req.Source != sourceGame:
 		return errors.New("wrong source type")
-	case req.State != stateDeposit || req.State != stateWithdraw:
+	case req.State != stateDeposit && req.State != stateWithdraw:
 		return errors.New("wrong state type")
 	}
 
