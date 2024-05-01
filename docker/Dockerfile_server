@@ -1,0 +1,23 @@
+FROM golang:1.22.1-alpine as backend_builder
+
+WORKDIR /src
+
+RUN apk --update add git build-base upx tzdata curl
+
+COPY . ./
+
+RUN go mod download
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -tags netgo -ldflags '-w' -o go/bin/server *.go 
+    && upx /go/bin/server
+
+FROM scratch
+
+EXPOSE 8888
+
+WORKDIR "/server"
+
+CMD ["/server/server"]
+
+COPY --from=backend_builder /go/bin/server /server/server
+COPY --from=backend_builder /src/config.ini /server/config.ini

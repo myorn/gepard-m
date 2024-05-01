@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5432:5432"
+
+  deposit_service:
+    image: your_golang_service_image:latest
+    restart: always
+    depends_on:
+      - postgres
