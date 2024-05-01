@@ -10,5 +10,7 @@ services:
   deposit_service:
     image: deposit_service:latest
     restart: always
+    ports:
+      - "8888:8888"
     depends_on:
       - postgres
