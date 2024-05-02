@@ -40,7 +40,7 @@ func serveGRPC(dbSession *sql.DB) {
 	port := config.String("server.port")
 
 	// Create a gRPC server
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", config.String("server.host")+":"+port)
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
