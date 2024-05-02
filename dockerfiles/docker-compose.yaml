@@ -13,7 +13,8 @@ services:
 
   deposit_service:
     build:
-      dockerfile: Dockerfile_server
+      context: ../
+      dockerfile: dockerfiles/Dockerfile_server
     restart: always
     ports:
       - "8888:8888"
