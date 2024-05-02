@@ -1,6 +1,9 @@
 # deposit server
 Hi! Initially I thought that some client would be needed to test the server, but later it seemed like not too much of a good idea.
 Anyways, sorry if it is sloppy in some places :)
+
+**Important note:** this service was made with assumption that all sums are *__integers__* in which first two digits from the right side are cents
+
 ## How to run it:
 Option one:
 ```bash
