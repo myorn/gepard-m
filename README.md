@@ -1,6 +1,8 @@
 # deposit server
-
-## Run
+Hi! Initially I thought that some client would be needed to test the server, but later it seemed like not too much of a good idea.
+Anyways, sorry if it is sloppy in some places :)
+## How to run it:
+```bash
 
 Option one:
 ```bash
