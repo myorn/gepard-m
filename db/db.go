@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 
 	_ "github.com/lib/pq"
@@ -14,7 +13,7 @@ import (
 
 func InitDB() *sql.DB {
 	// Connect to the database
-	connStr := fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable")
+	connStr := "postgres://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatalf("Error opening database connection: %v", err)

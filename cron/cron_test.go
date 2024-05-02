@@ -32,7 +32,7 @@ type TxData struct {
 }
 
 func generateRandomTxData() ([]byte, int, string) {
-	rand.Seed(time.Now().UnixNano())
+	rand.New(rand.NewSource(time.Now().UnixNano()))
 	amount := rand.Intn(1000) + 1                                   // Random amount between 1 and 1000
 	states := []string{"deposit", "deposit", "deposit", "withdraw"} // State can be "deposit" or "withdraw"
 	sources := []string{"game", "payment", "service"}               // Source can be "game", "payment", or "service"
