@@ -6,10 +6,10 @@ import (
 	"net"
 
 	config "github.com/gookit/ini/v2"
-	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 
 	"github.com/myorn/gepard-m/constants"
+	"github.com/myorn/gepard-m/cron"
 	dblib "github.com/myorn/gepard-m/db"
 	pb "github.com/myorn/gepard-m/dto/proto"
 	"github.com/myorn/gepard-m/service"
@@ -24,6 +24,8 @@ func main() {
 	defer dbSession.Close()
 
 	serveGRPC(dbSession)
+
+	go cron.RunCancelJob(dbSession)
 }
 
 func loadConfig(filename string) {

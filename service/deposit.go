@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/myorn/gepard-m/constants"
 	"github.com/myorn/gepard-m/dao"
 	"github.com/myorn/gepard-m/dto/proto"
 )
@@ -19,15 +20,6 @@ const (
 	MessageAcc    = "Accepted"
 	MessageErr    = "Error: %v"
 	MessageBadReq = "Bad data: %v"
-
-	// accepted sources
-	sourceGame    = "game"
-	sourcePayment = "payment"
-	sourceService = "service"
-
-	// accepted states
-	stateDeposit  = "deposit"
-	stateWithdraw = "withdraw"
 )
 
 func New() *depositServer {
@@ -46,7 +38,12 @@ func (*depositServer) PeformDepositAction(ctx context.Context, req *proto.Reques
 		return nil, err
 	}
 
-	err = dao.SaveTxAndUpdateBalance(ctx, jsonedReq, req.Amount, req.State, req.TxId)
+	err = dao.AddBalanceFromTx(ctx, req.State, req.Amount)
+	if err != nil {
+		return &proto.Response{Message: fmt.Sprintf(MessageErr, err)}, err
+	}
+
+	err = dao.SaveTx(ctx, jsonedReq, req.TxId)
 	if err != nil {
 		return &proto.Response{Message: fmt.Sprintf(MessageErr, err)}, err
 	}
@@ -57,16 +54,20 @@ func (*depositServer) PeformDepositAction(ctx context.Context, req *proto.Reques
 func validateDepositRequest(req *proto.Request) error {
 	amount, err := strconv.Atoi(req.Amount)
 
+	_, errTxId := strconv.Atoi(req.TxId)
+
 	switch {
 	case err != nil:
 		return err
 	case amount < 0:
 		return errors.New("amount can't be negative")
-	case req.Source != sourceService && req.Source != sourcePayment &&
-		req.Source != sourceGame:
+	case req.Source != constants.SourceService && req.Source != constants.SourcePayment &&
+		req.Source != constants.SourceGame:
 		return errors.New("wrong source type")
-	case req.State != stateDeposit && req.State != stateWithdraw:
+	case req.State != constants.StateDeposit && req.State != constants.StateWithdraw:
 		return errors.New("wrong state type")
+	case errTxId != nil:
+		return errors.New("transaction ID must be a numeric string")
 	}
 
 	return nil

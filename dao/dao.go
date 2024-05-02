@@ -3,16 +3,15 @@ package dao
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 
 	"github.com/myorn/gepard-m/constants"
 )
 
-func SaveTxAndUpdateBalance(
+func SaveTx(
 	ctx context.Context,
 	jsonedReq []byte,
-	amount,
-	state,
 	txID string,
 ) error {
 	dbSession := ctx.Value(constants.DBSession).(*sql.DB)
@@ -28,17 +27,39 @@ func SaveTxAndUpdateBalance(
 	}
 
 	// Insert data into the database
-	_, err = dbSession.ExecContext(ctx, `DO $$
-BEGIN
-    UPDATE deposit SET balance =
-    CASE
-    WHEN ? = 'deposit' THEN balance + ?
-    ELSE balance - ?;
+	_, err = dbSession.ExecContext(ctx,
+		`INSERT INTO messages (message, tx_id) VALUES ($1,$2);`,
+		jsonedReq, txID)
+	if err != nil {
+		return err
+	}
 
-    INSERT INTO messages (message, tx_id)
-    VALUES (?,?);
-END $$;`,
-		state, amount, amount, jsonedReq, txID)
+	return nil
+}
+
+func AddBalanceFromTx(ctx context.Context, state, amount string) error {
+	dbSession := ctx.Value(constants.DBSession).(*sql.DB)
+	if dbSession == nil {
+		log.Fatal("no database connection found")
+		return nil
+	}
+
+	// Connect to the database
+	err := dbSession.Ping()
+	if err != nil {
+		log.Fatalf("Error connecting to the database: %v", err)
+	}
+
+	updateStr := "UPDATE deposit SET credit = credit"
+	switch state {
+	case "deposit":
+		updateStr += " + $1;"
+	case "withdraw":
+		updateStr += " - $1;"
+	}
+
+	// Insert data into the database
+	_, err = dbSession.ExecContext(ctx, updateStr, amount)
 	if err != nil {
 		return err
 	}
@@ -49,18 +70,18 @@ END $$;`,
 type Message struct {
 	ID        string
 	State     string
-	Amount    uint64
-	TxID      uint64
+	Amount    string
+	TxID      string
 	CreatedAt string
 }
 
 func GetLast10OddMessages(db *sql.DB) ([]Message, error) {
 	// Prepare the query
 	query := `
-        SELECT id, message->'state', message->'amount', tx_id, created_at
+        SELECT id, message->>'state', message->>'amount', tx_id, created_at
         FROM messages
+	    WHERE deleted_at IS NULL
         ORDER BY created_at DESC
-	WHERE deleted_at IS NULL
         LIMIT 20
     `
 
@@ -101,9 +122,9 @@ func GetLast10OddMessages(db *sql.DB) ([]Message, error) {
 	return messages, nil
 }
 
-func DeleteMessageByTxID(db *sql.DB, txID uint64) error {
+func DeleteMessageByTxID(db *sql.DB, txID string) error {
 	// Prepare the update statement
-	stmt, err := db.Prepare("UPDATE messages SET deleted_at = NOW() WHERE tx_id = ?")
+	stmt, err := db.Prepare("UPDATE messages SET deleted_at = NOW() WHERE tx_id = $1")
 	if err != nil {
 		return err
 	}
@@ -118,9 +139,9 @@ func DeleteMessageByTxID(db *sql.DB, txID uint64) error {
 	return nil
 }
 
-func UpdateAddBalance(db *sql.DB, balance int64) error {
+func AddBalance(db *sql.DB, balance int64) error {
 	// Prepare the update statement
-	stmt, err := db.Prepare("UPDATE deposit SET balance = ?")
+	stmt, err := db.Prepare("UPDATE deposit SET credit = credit + $1")
 	if err != nil {
 		return err
 	}
@@ -133,4 +154,47 @@ func UpdateAddBalance(db *sql.DB, balance int64) error {
 	}
 
 	return nil
+}
+
+func GetBalance(ctx context.Context) (int64, error) {
+	dbSession := ctx.Value(constants.DBSession).(*sql.DB)
+	if dbSession == nil {
+		return 0, nil
+	}
+
+	// Query the database for the credit balance
+	var credit int64
+	err := dbSession.QueryRowContext(ctx, "SELECT credit FROM deposit;").Scan(&credit)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// No rows in the result set
+			return 0, nil
+		}
+
+		return 0, err
+	}
+
+	return credit, nil
+}
+
+func GetSumOfLiveMessages(ctx context.Context) (int64, error) {
+	dbSession := ctx.Value(constants.DBSession).(*sql.DB)
+	if dbSession == nil {
+		log.Fatal("no database connection found")
+		return 0, nil
+	}
+
+	// Query the database for the sum of amounts of non-deleted messages
+	var sum int64
+	err := dbSession.QueryRowContext(ctx,
+		"SELECT SUM((message->>'amount')::bigint * (CASE WHEN message->>'state' = 'deposit' THEN 1 ELSE -1 END)) FROM messages WHERE deleted_at IS NULL").Scan(&sum)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No rows in the result set
+			return 0, nil
+		}
+		return 0, err
+	}
+
+	return sum, nil
 }

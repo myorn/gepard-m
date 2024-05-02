@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	config "github.com/gookit/ini/v2"
+	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 
 	"github.com/myorn/gepard-m/constants"
@@ -14,8 +14,7 @@ import (
 
 func InitDB() *sql.DB {
 	// Connect to the database
-	connStr := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
-		config.String("db.user"), config.String("db.pw"), config.String("db.name"))
+	connStr := fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable")
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatalf("Error opening database connection: %v", err)
