@@ -2,8 +2,6 @@
 Hi! Initially I thought that some client would be needed to test the server, but later it seemed like not too much of a good idea.
 Anyways, sorry if it is sloppy in some places :)
 ## How to run it:
-```bash
-
 Option one:
 ```bash
 sudo docker run --name postgres2 --rm -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres postgres
