@@ -29,6 +29,7 @@ func Cancel10OddMessages(dbSession *sql.DB) error {
 		return err
 	}
 
+	// collect an amount which we should subtract from balance when we cancel msgs
 	var amountOverall int64
 
 	for i := range msgs {
@@ -46,11 +47,12 @@ func Cancel10OddMessages(dbSession *sql.DB) error {
 		}
 	}
 
-	// update balance and cancel them
+	// update balance
 	if err := dao.AddBalance(dbSession, amountOverall); err != nil {
 		return err
 	}
 
+	// soft delete messages
 	for i := range msgs {
 		if err := dao.DeleteMessageByTxID(dbSession, msgs[i].TxID); err != nil {
 			return err

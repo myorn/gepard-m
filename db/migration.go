@@ -45,12 +45,6 @@ func Migrate(db *sql.DB) {
 func Flush(db *sql.DB) {
 	_, err := db.ExecContext(context.Background(), `TRUNCATE messages, deposit RESTART IDENTITY`)
 	if err != nil {
-		pe, ok := err.(checker)
-		// not a postgre error or not a duplicate error
-		if !ok || pe.SQLState() != duplicateTableErrorCode {
-			log.Fatalf("Failed to migrate, %v", err)
-		}
-
-		log.Printf("Already migrated, %v", err)
+		log.Fatalf("Failed to flush shema, %v", err)
 	}
 }

@@ -3,8 +3,10 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 
+	config "github.com/gookit/ini/v2"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 
@@ -13,7 +15,12 @@ import (
 
 func InitDB() *sql.DB {
 	// Connect to the database
-	connStr := "postgres://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		config.String("db.user"),
+		config.String("db.pass"),
+		config.String("db.host"),
+		config.String("db.port"),
+		config.String("db.schema"))
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatalf("Error opening database connection: %v", err)
